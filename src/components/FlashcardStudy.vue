@@ -21,6 +21,7 @@ const flashcards = ref([]);
 const currentIndex = ref(0);
 const isFlipped = ref(false);
 const loading = ref(false);
+const showCompletionModal = ref(false);
 
 // Styling helpers for Priority
 const priorityColors = {
@@ -83,7 +84,7 @@ const nextCard = () => {
   if (currentIndex.value < flashcards.value.length - 1) {
     currentIndex.value++;
   } else {
-    alert('Bạn đã hoàn thành lượt ôn tập tất cả các Flashcards hiện tại.');
+    showCompletionModal.value = true;
     currentIndex.value = 0;
   }
 };
@@ -94,6 +95,12 @@ const prevCard = () => {
   if (currentIndex.value > 0) {
     currentIndex.value--;
   }
+};
+
+// Restart study from beginning
+const restartStudy = () => {
+  showCompletionModal.value = false;
+  loadFlashcards();
 };
 </script>
 
@@ -286,6 +293,47 @@ const prevCard = () => {
         </div>
       </div>
 
+    </div>
+
+    <!-- MODAL: COMPLETION FLASHCARD STUDY -->
+    <div 
+      v-show="showCompletionModal" 
+      class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity duration-300"
+    >
+      <div 
+        class="bg-white dark:bg-slate-800 w-full max-w-md rounded-3xl border border-slate-200 dark:border-slate-700 shadow-2xl p-8 relative text-center transform transition-all duration-300"
+      >
+        <!-- Confetti/Trophy Icon -->
+        <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 mb-5 animate-bounce">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0v-3.375c0-.621-.504-1.125-1.125-1.125h-.875V10.5h.875c.621 0 1.125-.504 1.125-1.125V5.625c0-.621-.504-1.125-1.125-1.125H4.125C3.504 4.5 3 5.004 3 5.625v3.75c0 .621.504 1.125 1.125 1.125h.875V14.25h-.875A1.125 1.125 0 0 0 3 15.375v3.375M16.5 18.75h-9M18 10.25h.75A2.25 2.25 0 0 0 21 8V6a2.25 2.25 0 0 0-2.25-2.25H18m-12 8.5H5.25A2.25 2.25 0 0 1 3 10V8a2.25 2.25 0 0 1 2.25-2.25H6" />
+          </svg>
+        </div>
+        
+        <h3 class="text-2xl font-black text-slate-900 dark:text-white mb-2">Chúc mừng!</h3>
+        <p class="text-sm text-slate-555 dark:text-slate-400 mb-6 leading-relaxed">
+          Bạn đã hoàn thành lượt ôn tập tất cả các Flashcards hiện tại trong bộ lọc này.<br>
+          Hãy tiếp tục luyện tập hoặc thay đổi bộ lọc để học thêm các từ vựng mới.
+        </p>
+
+        <div class="flex flex-col sm:flex-row items-center gap-3">
+          <button 
+            @click="restartStudy"
+            class="w-full sm:flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs transition-all shadow-md shadow-indigo-500/10 cursor-pointer flex items-center justify-center gap-2"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+            </svg>
+            Học lại từ đầu
+          </button>
+          <button 
+            @click="showCompletionModal = false"
+            class="w-full sm:flex-1 py-3 bg-white hover:bg-slate-50 dark:bg-slate-700 dark:hover:bg-slate-650 text-slate-800 dark:text-slate-200 font-bold border border-slate-300 dark:border-slate-650 rounded-xl text-xs transition-all cursor-pointer"
+          >
+            Tuyệt vời!
+          </button>
+        </div>
+      </div>
     </div>
 
   </div>

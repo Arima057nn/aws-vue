@@ -15,7 +15,29 @@ const props = defineProps({
 });
 
 // Emits
-const emit = defineEmits(['select-course', 'import-success']);
+const emit = defineEmits(['select-course', 'import-success', 'delete-course']);
+
+// Local state for custom delete confirmation modal
+const showConfirmDeleteModal = ref(false);
+const courseToDelete = ref(null);
+
+const triggerDeleteCourse = (course) => {
+  courseToDelete.value = course;
+  showConfirmDeleteModal.value = true;
+};
+
+const executeDeleteCourse = () => {
+  if (courseToDelete.value) {
+    emit('delete-course', courseToDelete.value.id);
+  }
+  showConfirmDeleteModal.value = false;
+  courseToDelete.value = null;
+};
+
+const cancelDeleteCourse = () => {
+  showConfirmDeleteModal.value = false;
+  courseToDelete.value = null;
+};
 
 // Local state for tracking import statuses per course
 // Structure: { [courseId]: { loading: boolean, success: boolean | null, message: string } }
@@ -109,12 +131,23 @@ const handleFileChange = async (e, courseId) => {
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
             </svg>
           </div>
-          <span 
-            v-if="selectedCourseId === course.id"
-            class="text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 px-2 py-0.5 rounded-md"
-          >
-            Đang Học
-          </span>
+          <div class="flex items-center gap-2">
+            <span 
+              v-if="selectedCourseId === course.id"
+              class="text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 px-2 py-0.5 rounded-md"
+            >
+              Đang Học
+            </span>
+            <button 
+              @click.stop="triggerDeleteCourse(course)"
+              class="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors"
+              title="Xóa khóa học"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         <h3 class="text-base font-bold text-slate-900 dark:text-white mt-4 line-clamp-1">
@@ -190,5 +223,43 @@ const handleFileChange = async (e, courseId) => {
 
       </div>
     </div>
+
+    <!-- MODAL: CONFIRM DELETE COURSE -->
+    <div 
+      v-show="showConfirmDeleteModal" 
+      class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity duration-300"
+    >
+      <div 
+        class="bg-white dark:bg-slate-800 w-full max-w-md rounded-3xl border border-slate-200 dark:border-slate-700 shadow-2xl p-8 relative text-center transform transition-all duration-300"
+      >
+        <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 mb-5">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+          </svg>
+        </div>
+        
+        <h3 class="text-xl font-extrabold text-slate-900 dark:text-white mb-2">Xác nhận xóa khóa học</h3>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">
+          Bạn có chắc chắn muốn xóa khóa học <strong class="text-slate-800 dark:text-slate-200">"{{ courseToDelete?.title }}"</strong>?<br>
+          Hành động này sẽ xóa vĩnh viễn khóa học này và <span class="text-red-500 font-semibold">tất cả từ vựng bên trong</span>. Thao tác này không thể hoàn tác.
+        </p>
+
+        <div class="flex items-center gap-3">
+          <button 
+            @click="cancelDeleteCourse"
+            class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-650 text-slate-700 dark:text-slate-300 font-semibold rounded-xl text-xs transition-all"
+          >
+            Hủy bỏ
+          </button>
+          <button 
+            @click="executeDeleteCourse"
+            class="flex-1 py-3 bg-red-650 hover:bg-red-700 text-white font-semibold rounded-xl text-xs transition-all shadow-md shadow-red-500/10"
+          >
+            Xóa khóa học
+          </button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>

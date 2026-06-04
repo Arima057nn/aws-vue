@@ -103,5 +103,33 @@ export const api = {
             method: 'POST',
             body: formData
         });
+    },
+
+    /**
+     * Create a new vocabulary item.
+     */
+    createVocabulary(data) {
+        return request('/vocabularies', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    },
+
+    /**
+     * Delete a course.
+     */
+    deleteCourse(id) {
+        return request(`/courses/${id}`, {
+            method: 'DELETE'
+        });
+    },
+
+    /**
+     * Delete a vocabulary item.
+     */
+    deleteVocabulary(id) {
+        return request(`/vocabularies/${id}`, {
+            method: 'DELETE'
+        });
     }
 };

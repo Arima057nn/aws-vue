@@ -28,6 +28,15 @@ const importSuccess = ref(null);
 const showExampleModal = ref(false);
 const activeVocab = ref(null);
 
+// Adding vocabulary state refs
+const isAddingVocabulary = ref(false);
+const newVocabWord = ref('');
+const newVocabCategory = ref('');
+const newVocabMeaning = ref('');
+const newVocabExample = ref('');
+const newVocabPriority = ref(1);
+const isSubmittingVocab = ref(false);
+
 // Flashcards (Spaced Repetition) state
 const flashcards = ref([]);
 const currentCardIndex = ref(0);
@@ -144,6 +153,69 @@ const handlePriorityUpdated = (updatedVocab) => {
   const index = vocabularies.value.findIndex(v => v.id === updatedVocab.id);
   if (index !== -1) {
     vocabularies.value[index] = updatedVocab;
+  }
+};
+
+const handleDeleteCourse = async (courseId) => {
+  try {
+    await api.deleteCourse(courseId);
+    courses.value = courses.value.filter(c => c.id !== courseId);
+    if (selectedCourse.value && selectedCourse.value.id === courseId) {
+      if (courses.value.length > 0) {
+        selectCourse(courses.value[0]);
+      } else {
+        selectedCourse.value = null;
+        vocabularies.value = [];
+      }
+    }
+  } catch (err) {
+    alert('Không thể xóa khóa học: ' + err.message);
+  }
+};
+
+const handleVocabularyDeleted = (vocabId) => {
+  vocabularies.value = vocabularies.value.filter(v => v.id !== vocabId);
+  flashcards.value = flashcards.value.filter(v => v.id !== vocabId);
+};
+
+const handleVocabularyUpdated = (updatedVocab) => {
+  const index = vocabularies.value.findIndex(v => v.id === updatedVocab.id);
+  if (index !== -1) {
+    vocabularies.value[index] = updatedVocab;
+  }
+  const cardIndex = flashcards.value.findIndex(v => v.id === updatedVocab.id);
+  if (cardIndex !== -1) {
+    flashcards.value[cardIndex] = updatedVocab;
+  }
+};
+
+const handleAddVocabulary = async () => {
+  if (!newVocabWord.value.trim() || !newVocabMeaning.value.trim()) return;
+  isSubmittingVocab.value = true;
+  try {
+    const newVocab = await api.createVocabulary({
+      course_id: selectedCourse.value.id,
+      word: newVocabWord.value,
+      category: newVocabCategory.value || null,
+      meaning: newVocabMeaning.value,
+      example: newVocabExample.value || null,
+      priority: parseInt(newVocabPriority.value)
+    });
+    
+    // Add to the local list at the beginning
+    vocabularies.value.unshift(newVocab);
+    
+    // Reset and close
+    newVocabWord.value = '';
+    newVocabCategory.value = '';
+    newVocabMeaning.value = '';
+    newVocabExample.value = '';
+    newVocabPriority.value = 1;
+    isAddingVocabulary.value = false;
+  } catch (err) {
+    alert('Không thể tạo từ vựng mới: ' + err.message);
+  } finally {
+    isSubmittingVocab.value = false;
   }
 };
 
@@ -264,6 +336,7 @@ const openExample = (vocab) => {
             :selectedCourseId="selectedCourse?.id" 
             @select-course="selectCourse" 
             @import-success="selectCourse" 
+            @delete-course="handleDeleteCourse"
           />
         </div>
 
@@ -278,6 +351,15 @@ const openExample = (vocab) => {
             
             <div class="flex items-center gap-2">
               <button 
+                @click="isAddingVocabulary = true" 
+                class="px-4 py-2 text-sm font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-650 text-slate-700 dark:text-slate-300 rounded-xl flex items-center gap-1.5 transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Thêm từ mới
+              </button>
+              <button 
                 @click="startFlashcards" 
                 class="px-4 py-2 text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl flex items-center gap-2 transition-colors shadow-md shadow-indigo-600/10"
               >
@@ -290,6 +372,8 @@ const openExample = (vocab) => {
           <VocabularyList 
             :vocabularies="vocabularies" 
             @priority-updated="handlePriorityUpdated" 
+            @vocabulary-deleted="handleVocabularyDeleted"
+            @vocabulary-updated="handleVocabularyUpdated"
           />
         </div>
       </div>
@@ -433,6 +517,118 @@ const openExample = (vocab) => {
             </div>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- MODAL: ADD VOCABULARY -->
+    <div v-show="isAddingVocabulary" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="bg-white dark:bg-slate-800 w-full max-w-lg rounded-3xl border border-slate-200 dark:border-slate-850 shadow-2xl p-8 relative">
+        <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-2">Thêm từ vựng mới</h3>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mb-6">
+          Thêm từ vựng mới vào bài học <strong class="text-slate-800 dark:text-slate-200">"{{ selectedCourse?.title }}"</strong>.
+        </p>
+
+        <button @click="isAddingVocabulary = false" class="absolute top-6 right-6 p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+          </svg>
+        </button>
+
+        <form @submit.prevent="handleAddVocabulary" class="flex flex-col gap-5">
+          <!-- Word -->
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Từ gốc (Japanese)</label>
+            <input 
+              v-model="newVocabWord" 
+              type="text" 
+              placeholder="VD: 食べる, 勉強, 嬉しい..."
+              class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-850 rounded-xl px-4 py-2.5 outline-none text-sm font-semibold text-slate-900 dark:text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 transition-all"
+              required
+            />
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <!-- Category -->
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Loại từ</label>
+              <select 
+                v-model="newVocabCategory"
+                class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-850 rounded-xl px-4 py-2.5 outline-none text-sm font-semibold text-slate-900 dark:text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 transition-all cursor-pointer"
+              >
+                <option value="">Không xác định</option>
+                <option value="Danh từ">Danh từ</option>
+                <option value="Động từ">Động từ</option>
+                <option value="Tính từ -i">Tính từ -i</option>
+                <option value="Tính từ -na">Tính từ -na</option>
+                <option value="Trạng từ">Trạng từ</option>
+                <option value="Giới từ">Giới từ</option>
+                <option value="Liên từ">Liên từ</option>
+                <option value="Cụm từ">Cụm từ</option>
+                <option value="Ngữ pháp">Ngữ pháp</option>
+                <option value="Thán từ">Thán từ</option>
+              </select>
+            </div>
+            
+            <!-- Priority -->
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Trạng thái ban đầu</label>
+              <select 
+                v-model="newVocabPriority"
+                class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-850 rounded-xl px-4 py-2.5 outline-none text-sm font-semibold text-slate-900 dark:text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 transition-all cursor-pointer"
+              >
+                <option value="1">Loại 1 - Mới</option>
+                <option value="2">Loại 2 - Đang học</option>
+                <option value="3">Loại 3 - Đã nhớ</option>
+                <option value="4">Loại 4 - Cần ôn lại</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Meaning -->
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Ý nghĩa (Tiếng Việt)</label>
+            <input 
+              v-model="newVocabMeaning" 
+              type="text" 
+              placeholder="Nghĩa của từ..."
+              class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-850 rounded-xl px-4 py-2.5 outline-none text-sm font-semibold text-slate-900 dark:text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 transition-all"
+              required
+            />
+          </div>
+
+          <!-- Example -->
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Ví dụ minh họa</label>
+            <textarea 
+              v-model="newVocabExample" 
+              placeholder="VD: 毎日ご飯を食べます。(Mỗi ngày tôi đều ăn cơm)..."
+              rows="3"
+              class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-850 rounded-xl px-4 py-2.5 outline-none text-sm font-semibold text-slate-900 dark:text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 transition-all resize-none"
+            ></textarea>
+          </div>
+
+          <!-- Submit Button -->
+          <div class="flex items-center gap-3 mt-2">
+            <button 
+              type="button"
+              @click="isAddingVocabulary = false"
+              class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-650 text-slate-700 dark:text-slate-300 font-semibold rounded-xl text-sm transition-all"
+            >
+              Hủy
+            </button>
+            <button 
+              type="submit" 
+              :disabled="isSubmittingVocab"
+              class="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold rounded-xl text-sm transition-all shadow-md shadow-indigo-500/10 flex items-center justify-center gap-2"
+            >
+              <svg v-if="isSubmittingVocab" class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span>{{ isSubmittingVocab ? 'Đang lưu...' : 'Lưu từ vựng' }}</span>
+            </button>
+          </div>
+        </form>
       </div>
     </div>
 
