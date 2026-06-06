@@ -286,7 +286,7 @@ const openExample = (vocab) => {
           </div>
           <div>
             <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-indigo-600 to-violet-500 bg-clip-text text-transparent dark:from-indigo-400 dark:to-violet-400">
-              Japanese Flashcard
+              Flashcard
             </h1>
             <p class="text-xs text-slate-500 dark:text-slate-400">Học từ vựng & Spaced Repetition</p>
           </div>
