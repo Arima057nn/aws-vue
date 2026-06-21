@@ -319,7 +319,7 @@ const openExample = (vocab) => {
         <!-- Course Cards Grid -->
         <div class="flex flex-col gap-4">
           <div class="flex items-center justify-between">
-            <h2 class="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Chủ đề bài học của bạn</h2>
+            <h2 class="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Chủ đề bài học của bạn!</h2>
             <button 
               @click="isAddingCourse = true" 
               class="px-4 py-2 text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl flex items-center gap-1.5 transition-colors shadow-md shadow-indigo-600/10"
