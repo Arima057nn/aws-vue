@@ -1,11 +1,11 @@
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost/api';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
 
 /**
  * Reusable fetch wrapper with content-type handling.
  */
 async function request(path, options = {}) {
     const url = `${BASE_URL}${path}`;
-    
+
     // Set headers
     const headers = {
         'Accept': 'application/json',
@@ -87,7 +87,7 @@ export const api = {
         const params = new URLSearchParams();
         if (courseId) params.append('course_id', courseId);
         if (priority) params.append('priority', priority);
-        
+
         const queryString = params.toString() ? `?${params.toString()}` : '';
         return request(`/vocabularies/random${queryString}`);
     },
