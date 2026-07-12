@@ -43,7 +43,7 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
-          role-to-assume: arn:aws:iam::175325139974:role/deploy-role
+          role-to-assume: arn:aws:iam::773280493618:role/deploy-role
           role-skip-session-tagging: true
 
       # Step 5: Sync built static files to S3
